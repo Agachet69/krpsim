@@ -12,40 +12,38 @@ def parse_args():
     )
     return parser.parse_args()
 
-def is_stock():
-    pass
-
-def is_process():
-    pass
-
-def is_optimize():
-    pass
-
 def parse_file(path):
-    parsed_values = []
+
+    stocks = []
+
 
     with open(path, "r") as file:
         for line in file:
-            if line.startswith('#'):
-                print(line)
-            elif is_stock:
-                print('is_stock')
-            elif is_process:
-                print('is_process')
-            elif is_optimize:
-                print('is_optimize')
+            if not line.startswith('#'):
+                    name = line[:line.index(":")]
+                    if name == "optimize":
+                        pass
+                    else:
+                        if line[line.index(":") + 1 :][0] == '(':
+                            pass
+                        else:
+                            print(line)
+
+
+
+                    
+
             if not line:
                 raise ValueError(
                     f"The file is empty."
                 )
         
-    return parsed_values
+    return stocks
 
 def main():
     args = parse_args()
-    print(args)
 
-    parsing = parse_file(args.path)
+    stocks = parse_file(args.path)
 
 
 if __name__ == "__main__":
