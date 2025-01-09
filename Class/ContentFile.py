@@ -22,3 +22,10 @@ class ContentFile:
             self.optimize_list.append(i)
     def add_process(self, name, needs, results, delay):
         self.process_list.append(Process(name, needs, results, delay))
+        
+    def is_process_only_using_thing_in_stock(self, process: Process):
+        
+        if all([True if (need.name in [stock.name for stock in self.stock_list]) else False for need in process.needs]):
+            return True
+        
+        return False

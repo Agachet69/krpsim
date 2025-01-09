@@ -4,6 +4,8 @@ from Class.Item import Item
 from Class.Stock import Stock
 from Class.ContentFile import ContentFile
 
+# LE FILE RECRE VA ETRE UN PEU RELOU A METRE EN PLACE JE EPNSE? MAIS PEU ETRE PAS NECESAIRE DE SE CASSER LA TETE DESSUS POUR LE MOMENT
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -26,7 +28,7 @@ def parse_stock_line(line: str):
 
 
 def parse_process_line(line: str):
-    name = line[:line.index(":")]
+    process_name = line[:line.index(":")]
 
     rest = line[line.index(":") + 1:]
 
@@ -49,7 +51,7 @@ def parse_process_line(line: str):
 
     delay = int(rest[rest.index(")")+2:])
 
-    return name, needs, results, delay
+    return process_name, needs, results, delay
 
 
 
@@ -81,10 +83,26 @@ def parse_file(path):
 
     return content_file
 
-def find_route(node: Node, content_file: ContentFile):
-    if all([True if need.name else False for need in node.process.needs]):
-        pass
+def find_route(node: Node, content_file: ContentFile, i):
+    if all([True if need.name in [stock.name for stock in content_file.stock_list] else False for need in node.process.needs]):
+        return
+    else:
+        for need in node.process.needs:
+            if need.name not in [stock.name for stock in content_file.stock_list]:
+                processes = [process for process in content_file.process_list if (need.name in [result.name for result in process.results])]
+                
+                if buy_process := next((process for process in processes if content_file.is_process_only_using_thing_in_stock(process)), None):
+                    new_node = Node(buy_process)
+                    node.add_child(new_node)
 
+                    find_route(new_node, content_file, i+1)
+                else:
+                    for process in processes:
+                        new_node = Node(process)
+                        node.add_child(new_node)
+
+                        find_route(new_node, content_file, i+1)
+                    
 def main():
     args = parse_args()
 
@@ -102,6 +120,15 @@ def main():
     
 
     print(main_nodes)
+    
+    # buy_beurre_process = next((process for process in content_file.process_list if process.name == "buy_beurre"))
+    
+    print(find_route(main_nodes[0], content_file, 0))
+    
+    main_nodes[0].display()
+    
+    
+    # print(main_nodes[0].children)
 
 
 
