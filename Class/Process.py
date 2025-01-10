@@ -1,5 +1,6 @@
 from typing import List, Literal, Union
 
+from Class.TerminalColor import TerminalColor
 from Class.Item import Item
 
 
@@ -10,4 +11,11 @@ class Process:
         self.results: List[Item] = results
         self.delay: int = delay
         self.type: Union[Literal["normal"], Literal["ressources"]] = type ##### Le type ressource sont pour les processs qui n'ont seulement besoin de chose provenant du stock initial (comme l'argent)
+
+    def display(self):
+        print(TerminalColor.yellow + self.name, TerminalColor.red + "(" + " | ".join([need.name + " " + str(need.quantity) for need in self.needs]) + ")", TerminalColor.green + "(" + " | ".join([result.name + " " + str(result.quantity) for result in self.results]) + ")", end="")
         
+        if self.type == "ressources":
+            print(TerminalColor.magenta + " [RESSOURCE]", end="")
+        
+        print()

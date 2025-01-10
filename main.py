@@ -1,8 +1,11 @@
 import argparse
+from typing import List
 from Class.Node import Node
 from Class.Item import Item
 from Class.Stock import Stock
 from Class.ContentFile import ContentFile
+from Class.TerminalColor import TerminalColor
+
 
 # LE FILE RECRE VA ETRE UN PEU RELOU A METRE EN PLACE JE EPNSE? MAIS PEU ETRE PAS NECESAIRE DE SE CASSER LA TETE DESSUS POUR LE MOMENT
 
@@ -35,19 +38,23 @@ def parse_process_line(line: str):
 
     needs_line = rest[1:rest.index(")")].split(";")
     needs = []
+    results = []
 
     for need in needs_line:
         name, quantity = need.split(":")
         needs.append(Item(name, int(quantity)))
 
-    rest = rest[rest.index(")")+2:]
-    
-    results_line = rest[1:rest.index(")")].split(";")
-    results = []
+    if rest[rest.index(")")+2][0] != "(":
+        pass
+    else:
+        rest = rest[rest.index(")")+2:]
+        
+        
+        results_line = rest[1:rest.index(")")].split(";")
 
-    for result in results_line:
-        name, quantity = result.split(":")
-        results.append(Item(name, int(quantity)))
+        for result in results_line:
+            name, quantity = result.split(":")
+            results.append(Item(name, int(quantity)))
 
     delay = int(rest[rest.index(")")+2:])
 
@@ -90,7 +97,7 @@ def parse_file(path):
 
     return content_file
 
-def find_route(node: Node, content_file: ContentFile, i):
+def find_route(node: Node, content_file: ContentFile):
     if all([True if need.name in [stock.name for stock in content_file.stock_list] else False for need in node.process.needs]):
         return
     else:
@@ -109,7 +116,7 @@ def find_route(node: Node, content_file: ContentFile, i):
                         new_node = Node(process)
                         node.add_child(new_node)
 
-                        find_route(new_node, content_file, i+1)
+                        find_route(new_node, content_file)
                         
 
 def run_route(node: Node, content_file: ContentFile):
@@ -119,15 +126,44 @@ def run_route(node: Node, content_file: ContentFile):
         for need in node.process.needs:
             if content_file.is_item_in_stock(need):
                 continue
-            elif ressource_process := next((process for process in ressources_process if (need.name in [result.name for result in process.results])), None):
-                content_file.run_process(ressource_process)
+            elif len(ressource_process := [process for process in ressources_process if (need.name in [result.name for result in process.results])]) > 0:
+                print('oui')
+                for process in ressource_process:
+                    if content_file.is_ressource_in_stock(process):
+                        content_file.run_process(process)
+                        return
             else:
                 child = next((child for child in node.children if need.name in [result.name for result in child.process.results]))
                                 
                 run_route(child, content_file)
                 
     content_file.run_process(node.process)
+
+def find_best_route(routes: List[Node], content_file: ContentFile):
     
+    score = []
+    
+    for optimize in content_file.optimize_list:
+        if optimize != "time":
+            for route in routes:
+                test_content_file = content_file.deep_copy()
+                
+                try:
+                    run_route(route, test_content_file)
+                    stock = next((stock for stock in test_content_file.stock_list if stock.name == optimize))
+                    score = stock.quantity
+                except Exception:
+                    score = 0
+            
+            # score.append({route.process.name: next((result.quantity for result in route.process.results if result.name == optimize), 0) for route in routes})
+        # score.append()
+        
+        
+        
+    
+    
+    
+
     
                     
 def main():
@@ -144,17 +180,48 @@ def main():
                 if len([True for result in process.results if result.name == optimize]) > 0:
                     main_nodes.append(Node(process))
     
-    content_file.display_stock()
 
     # buy_beurre_process = next((process for process in content_file.process_list if process.name == "buy_beurre"))
     
-    find_route(main_nodes[1], content_file, 0)
     
-    main_nodes[1].display()
+    for i, _ in enumerate(main_nodes):
+        find_route(main_nodes[i], content_file)
+    
+    
+    for process in content_file.process_list:
+        process.display()
+    print(TerminalColor.green)
+    
+    for i, node in enumerate(main_nodes):
+        print(TerminalColor.green + f"Route {i + 1} :", TerminalColor.white)
+        node.display()
+        print(TerminalColor.white)
+    
+    
+    
+    # main_nodes[0].display()
+    
+    
+    # find_best_route(main_nodes, content_file)
 
-    while (1):    
-        run_route(main_nodes[1], content_file)
-        content_file.display_stock()
+    # while (1):    
+    run_route(main_nodes[0], content_file)
+    
+    
+    content_file.display_stock()
+    
+    
+    
+    
+    
+    
+    
+    # run_route(main_nodes[0], content_file)
+    # content_file.display_stock()
+    # print("Delay total from process:", content_file.total_delay)
+    
+    # find_best_route(main_nodes, content_file)
+    
     
     
     # print(main_nodes[0].children)
