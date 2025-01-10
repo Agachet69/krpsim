@@ -8,7 +8,7 @@ class Stock(Item):
     def add(self, quantity):
         self.quantity += quantity
 
-    def remove(self, quantity):
+    def remove(self, quantity: int):
         if self.quantity < quantity:
             raise Exception(f"Cannot remove {quantity} from '{self.name}' (left: {self.quantity})")
         self.quantity -= quantity

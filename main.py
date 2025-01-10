@@ -24,7 +24,7 @@ def parse_args():
 
 def parse_stock_line(line: str):
     name, quantity = line.strip().split(":")
-    return Item(name, quantity)
+    return Item(name, int(quantity))
 
 
 def parse_process_line(line: str):
@@ -38,7 +38,7 @@ def parse_process_line(line: str):
 
     for need in needs_line:
         name, quantity = need.split(":")
-        needs.append(Item(name, quantity))
+        needs.append(Item(name, int(quantity)))
 
     rest = rest[rest.index(")")+2:]
     
@@ -47,7 +47,7 @@ def parse_process_line(line: str):
 
     for result in results_line:
         name, quantity = result.split(":")
-        results.append(Item(name, quantity))
+        results.append(Item(name, int(quantity)))
 
     delay = int(rest[rest.index(")")+2:])
 
@@ -80,6 +80,13 @@ def parse_file(path):
                         content_file.add_stock(parse_stock_line(line))
             if not line:
                 raise ValueError(f"The file is empty.")
+            
+    # code pour ajouter le type des process
+    
+    for process in content_file.process_list:
+        if all([True if (need.name in [stock.name for stock in content_file.stock_list]) else False for need in process.needs]):
+            process.type = "ressources"
+    
 
     return content_file
 
@@ -91,17 +98,37 @@ def find_route(node: Node, content_file: ContentFile, i):
             if need.name not in [stock.name for stock in content_file.stock_list]:
                 processes = [process for process in content_file.process_list if (need.name in [result.name for result in process.results])]
                 
-                if buy_process := next((process for process in processes if content_file.is_process_only_using_thing_in_stock(process)), None):
-                    new_node = Node(buy_process)
-                    node.add_child(new_node)
+                if buy_process := next((process for process in processes if process.type == "ressources"), None):
+                    # new_node = Node(buy_process)
+                    # node.add_child(new_node)
 
-                    find_route(new_node, content_file, i+1)
+                    # find_route(new_node, content_file, i+1)
+                    pass
                 else:
                     for process in processes:
                         new_node = Node(process)
                         node.add_child(new_node)
 
                         find_route(new_node, content_file, i+1)
+                        
+
+def run_route(node: Node, content_file: ContentFile):
+    while not content_file.is_ressource_in_stock(node.process):
+        ressources_process = content_file.get_ressources_process()
+        
+        for need in node.process.needs:
+            if content_file.is_item_in_stock(need):
+                continue
+            elif ressource_process := next((process for process in ressources_process if (need.name in [result.name for result in process.results])), None):
+                content_file.run_process(ressource_process)
+            else:
+                child = next((child for child in node.children if need.name in [result.name for result in child.process.results]))
+                                
+                run_route(child, content_file)
+                
+    content_file.run_process(node.process)
+    
+    
                     
 def main():
     args = parse_args()
@@ -117,15 +144,17 @@ def main():
                 if len([True for result in process.results if result.name == optimize]) > 0:
                     main_nodes.append(Node(process))
     
-    
+    content_file.display_stock()
 
-    print(main_nodes)
-    
     # buy_beurre_process = next((process for process in content_file.process_list if process.name == "buy_beurre"))
     
-    print(find_route(main_nodes[0], content_file, 0))
+    find_route(main_nodes[1], content_file, 0)
     
-    main_nodes[0].display()
+    main_nodes[1].display()
+
+    while (1):    
+        run_route(main_nodes[1], content_file)
+        content_file.display_stock()
     
     
     # print(main_nodes[0].children)
