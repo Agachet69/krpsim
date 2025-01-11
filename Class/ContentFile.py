@@ -4,10 +4,14 @@ from Class.Stock import Stock
 from Class.Process import Process
 import copy
 
+from Class.TerminalColor import TerminalColor
+
 
 class ContentFile:
 
     def __init__(self):
+        self.mode: Union[Literal["normal"], Literal["test"]] = "normal"
+        
         self.stock_list: List[Stock] = []
         self.process_list: List[Process] = []
         self.optimize_list: List[Union[Literal["time"], str]] = []
@@ -40,13 +44,13 @@ class ContentFile:
                 return True
         return False
 
-    def run_process(self, process: Process, mode: Union[Literal["run"], Literal["testing"]] = "run"):
-        # print(process.name)
+    def run_process(self, process: Process):
+        if self.mode == 'normal':
+            print(TerminalColor.green + "Running process: ", end="")
+            process.display()
+        
         if not self.is_ressource_in_stock(process):
             raise Exception(f"Cannot run the process: {process.name} due to stock quantity.")
-
-        if mode == "testing":
-            return
 
         for need in process.needs:
             stock = next((stock for stock in self.stock_list if stock.name == need.name))

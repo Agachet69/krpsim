@@ -127,11 +127,12 @@ def run_route(node: Node, content_file: ContentFile):
             if content_file.is_item_in_stock(need):
                 continue
             elif len(ressource_process := [process for process in ressources_process if (need.name in [result.name for result in process.results])]) > 0:
-                print('oui')
-                for process in ressource_process:
+                for i, process in enumerate(ressource_process):
                     if content_file.is_ressource_in_stock(process):
                         content_file.run_process(process)
-                        return
+                        break
+                    elif i == len(ressource_process) - 1:
+                        raise Exception(f"There is no ressource process runnable for {need.name} due to stock capacity.")
             else:
                 child = next((child for child in node.children if need.name in [result.name for result in child.process.results]))
                                 
@@ -141,31 +142,47 @@ def run_route(node: Node, content_file: ContentFile):
 
 def find_best_route(routes: List[Node], content_file: ContentFile):
     
-    score = []
+    routes_score = {}
     
-    for optimize in content_file.optimize_list:
-        if optimize != "time":
-            for route in routes:
-                test_content_file = content_file.deep_copy()
-                
-                try:
-                    run_route(route, test_content_file)
-                    stock = next((stock for stock in test_content_file.stock_list if stock.name == optimize))
-                    score = stock.quantity
-                except Exception:
-                    score = 0
-            
-            # score.append({route.process.name: next((result.quantity for result in route.process.results if result.name == optimize), 0) for route in routes})
-        # score.append()
-        
-        
-        
-    
-    
-    
+    for route in routes:
+        score = {}
+        test_content_file = content_file.deep_copy()
+        test_content_file.total_delay = 0
+        test_content_file.mode = "test"
+        try:
+            run_route(route, test_content_file)
+            for optimize in content_file.optimize_list:
+                if optimize != "time":
+                    stock = next((result for result in route.process.results if result.name == optimize))
+                    score[optimize] = stock.quantity
+                else:
+                    score[optimize] = test_content_file.total_delay
+        except Exception:
+            score = "DNF"
+        routes_score[route.process.name] = score
+
+    routes_score = {index: routes_score[index] for index in routes_score if routes_score[index] != "DNF"}
+
+    if not len(routes_score):
+        raise Exception("There is no more route available.")
+    if len(routes_score) == 1:
+        return next((route for route in routes if route.process.name == next(iter(routes_score))))
 
     
-                    
+            
+    for key in iter(routes_score[next(iter(routes_score))]):
+        max_value = max([score[key] for _, score in routes_score.items()])
+        
+        for _, score in routes_score.items():
+            score[key] = round(score[key] * 100 / max_value)
+    
+    for key in routes_score:
+        routes_score[key] = sum([score for _, score in routes_score[key].items()])
+    
+    better_route = max(routes_score, key=routes_score.get)
+    
+    return next((route for route in routes if route.process.name == better_route))
+    
 def main():
     args = parse_args()
 
@@ -183,6 +200,9 @@ def main():
 
     # buy_beurre_process = next((process for process in content_file.process_list if process.name == "buy_beurre"))
     
+    content_file.display_stock()
+    print()
+    print(TerminalColor.blue + "Optimize: " + ", ".join([optimize for optimize in content_file.optimize_list]))
     
     for i, _ in enumerate(main_nodes):
         find_route(main_nodes[i], content_file)
@@ -205,10 +225,8 @@ def main():
     # find_best_route(main_nodes, content_file)
 
     # while (1):    
-    run_route(main_nodes[0], content_file)
     
     
-    content_file.display_stock()
     
     
     
@@ -220,7 +238,15 @@ def main():
     # content_file.display_stock()
     # print("Delay total from process:", content_file.total_delay)
     
-    # find_best_route(main_nodes, content_file)
+    print()
+    
+    while True:
+        best_route = find_best_route(main_nodes, content_file)
+        print(TerminalColor.magenta + "Actual Better Route :" + TerminalColor.white)
+        best_route.process.display()
+        run_route(best_route, content_file)
+        content_file.display_stock()
+    
     
     
     
