@@ -1,4 +1,5 @@
 from typing import List, Literal, Union
+from Class.RunningProcess import RunningProcess
 from Class.Item import Item
 from Class.Stock import Stock
 from Class.Process import Process
@@ -15,6 +16,8 @@ class ContentFile:
         self.stock_list: List[Stock] = []
         self.process_list: List[Process] = []
         self.optimize_list: List[Union[Literal["time"], str]] = []
+        
+        self.running_process_list: List[RunningProcess] = []
 
         self.total_delay = 0
 
@@ -43,8 +46,25 @@ class ContentFile:
             if stock.quantity >= item.quantity:
                 return True
         return False
+    
+    def update_process(self, time: int):
+        to_pop = []
+        print("Number runnning process:", len(self.running_process_list))
+        for index, running in enumerate(self.running_process_list):
+            if running.end_time == time:
+                for result in running.process.results:
+                    if stock := next((stock for stock in self.stock_list if stock.name == result.name), None):
+                        stock.add(result.quantity)
+                    else:
+                        self.stock_list.append(Stock(result.name, result.quantity))
+                running.process.display()
+                to_pop.append(index)
+        to_pop.reverse()
+        for index in to_pop:
+            self.running_process_list.pop(index)
+                    
 
-    def run_process(self, process: Process):
+    def run_process(self, process: Process, process_from: Process, time: int):
         if self.mode == 'normal':
             print(TerminalColor.green + "Running process: ", end="")
             process.display()
@@ -55,13 +75,14 @@ class ContentFile:
         for need in process.needs:
             stock = next((stock for stock in self.stock_list if stock.name == need.name))
             stock.remove(need.quantity)
-        for result in process.results:
-            if stock := next((stock for stock in self.stock_list if stock.name == result.name), None):
-                stock.add(result.quantity)
-            else:
-                self.stock_list.append(Stock(result.name, result.quantity))
-
-        self.total_delay += process.delay
+            
+        self.running_process_list.append(RunningProcess(process, process_from, time))
+            
+        # for result in process.results:
+        #     if stock := next((stock for stock in self.stock_list if stock.name == result.name), None):
+        #         stock.add(result.quantity)
+        #     else:
+        #         self.stock_list.append(Stock(result.name, result.quantity))
 
     def display_stock(self):
         name_width = max(max(len(obj.name) for obj in self.stock_list), len("Name"))
