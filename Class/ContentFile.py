@@ -7,7 +7,6 @@ import copy
 
 from Class.TerminalColor import TerminalColor
 
-
 class ContentFile:
 
     def __init__(self):

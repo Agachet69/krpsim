@@ -1,0 +1,9 @@
+farine:100
+
+cuire_croissant:(farine:1):(croissant:1):50
+cuire_pain_au_chocolat:(farine:15):(pain_au_chocolat:1):100
+vendre_croissant:(croissant:1):(euro:1):5
+vendre_pain_au_chocolat:(pain_au_chocolat:1):(euro:200):5
+
+
+optimize:(euro)
