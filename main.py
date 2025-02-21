@@ -75,16 +75,18 @@ def parse_file(path):
             if not line.startswith("#"):
                 if line == "\n":
                     continue
-
-                name = line[: line.index(":")]
-
-                if name == "optimize":
-                    content_file.add_optimize(parse_optimize_line(line))
-                else:
-                    if line[line.index(":") + 1 :][0] == "(":
-                        content_file.add_process(*parse_process_line(line))
+                
+                if ':' in line: 
+                    name = line[:line.index(":")]
+                    if name == "optimize":
+                        content_file.add_optimize(parse_optimize_line(line))
                     else:
-                        content_file.add_stock(parse_stock_line(line))
+                        if line[line.index(":") + 1 :][0] == "(":
+                            content_file.add_process(*parse_process_line(line))
+                        else:
+                            content_file.add_stock(parse_stock_line(line))
+                else:
+                    raise ValueError(f"Wrong format file at line : {line}")
             if not line:
                 raise ValueError(f"The file is empty.")
 
@@ -95,6 +97,7 @@ def parse_file(path):
             [
                 True
                 if (need.name in [stock.name for stock in content_file.stock_list])
+                or need.quantity == 0
                 else False
                 for need in process.needs
             ]
@@ -105,14 +108,16 @@ def parse_file(path):
 
 
 def find_route(node: Node, content_file: ContentFile):
-    if all(
-        [
-            True
-            if need.name in [stock.name for stock in content_file.stock_list]
-            else False
-            for need in node.process.needs
-        ]
-    ):
+    # if all(
+    #     [
+    #         True
+    #         if need.name in [stock.name for stock in content_file.stock_list]
+    #         else False
+    #         for need in node.process.needs
+    #     ]
+    # ):
+    #     return
+    if node.process.type == "ressources":
         return
     else:
         for need in node.process.needs:
@@ -120,8 +125,9 @@ def find_route(node: Node, content_file: ContentFile):
                 processes = [
                     process
                     for process in content_file.process_list
-                    if (need.name in [result.name for result in process.results])
+                    if (need.name in [result.name for result in process.results if result.quantity > 0])
                 ]
+
 
                 if buy_process := next(
                     (process for process in processes if process.type == "ressources"),
@@ -129,9 +135,9 @@ def find_route(node: Node, content_file: ContentFile):
                 ):
                     new_node = Node(buy_process)
                     node.add_child(new_node)
+                    return
+                    # find_route(new_node, content_file)
 
-                    find_route(new_node, content_file)
-                    pass
                 else:
                     for process in processes:
                         new_node = Node(process)
@@ -391,7 +397,7 @@ def calculate_stock_route(
     multiplicator=1,
     depth=1,
 ):
-    node.display()
+    # node.display()
     route_stock_requirements.add_road_map_item(node.process, multiplicator)
 
     results = [
@@ -399,6 +405,7 @@ def calculate_stock_route(
         for result in node.process.results
         if result.name not in [need.name for need in node.process.needs]
     ]
+
 
     for result in results:
         route_stock_requirements.add_require_stock(
@@ -413,18 +420,19 @@ def calculate_stock_route(
     needs = [
         need
         for need in node.process.needs
-        if need.name not in [result.name for result in node.process.results]
+        if need.name not in [result.name for result in node.process.results] and need.quantity > 0
     ]
 
     for need in needs:
-        # print(need.name)
         if child := next(
             (child for child in node.children if child.process.create_item(need)), None
         ):
+            result_child = next((result for result in child.process.results if result.name == need.name), None)
+            # print(result_child.quantity)
             calculate_stock_route(
                 child,
                 route_stock_requirements,
-                multiplicator * need.quantity,
+                multiplicator * math.ceil(need.quantity / result_child.quantity),
                 depth + 1,
             )
 
@@ -435,19 +443,18 @@ def main():
     content_file = parse_file(args.path)
 
     main_nodes = []
+
     for optimize in content_file.optimize_list:
         if optimize != "time":
             for process in content_file.process_list:
                 if (
-                    len([True for result in process.results if result.name == optimize])
+                    len([True for result in process.results if result.name == optimize and result.quantity > 0])
                     > 0
                 ):
                     main_nodes.append(Node(process))
 
-    # buy_beurre_process = next((process for process in content_file.process_list if process.name == "buy_beurre"))
-
-    content_file.display_stock()
-    print()
+    # content_file.display_stock()
+    # print()
     print(
         TerminalColor.blue
         + "Optimize: "
@@ -459,56 +466,47 @@ def main():
 
     main_nodes = [RouteStockRequirements(route) for route in main_nodes]
 
-    for process in content_file.process_list:
-        process.display()
+    # for process in content_file.process_list:
+    #     process.display()
     print(TerminalColor.green)
 
-    for i, node in enumerate(main_nodes):
-        print(TerminalColor.green + f"Route {i + 1} :", TerminalColor.white)
-        node.route.display()
-        print(TerminalColor.white)
+    # for i, node in enumerate(main_nodes):
+    #     print(TerminalColor.green + f"Route {i + 1} :", TerminalColor.white)
+    #     node.route.display()
+    #     print(TerminalColor.white)
 
-    # main_nodes[0].display()
-
-    # find_best_route(main_nodes, content_file)
-
-    # while (1):
-
-    # run_route(main_nodes[0], content_file)
-    # content_file.display_stock()
-    # print("Delay total from process:", content_file.total_delay)
 
     calculate_stock_route(main_nodes[0].route, main_nodes[0])
-    print()
+    # print()
 
-    for requirement in main_nodes[0].requirements:
-        print(
-            requirement.result.name,
-            requirement.result.quantity,
-            "[",
-            " ".join(
-                [
-                    "|".join([need.name, str(need.quantity)])
-                    for need in requirement.needs
-                ]
-            ),
-            "]",
-            requirement.depth,
-        )
+    # for requirement in main_nodes[0].requirements:
+    #     print(
+    #         requirement.result.name,
+    #         requirement.result.quantity,
+    #         "[",
+    #         " ".join(
+    #             [
+    #                 "|".join([need.name, str(need.quantity)])
+    #                 for need in requirement.needs
+    #             ]
+    #         ),
+    #         "]",
+    #         requirement.depth,
+    #     )
 
-    print()
-    print("ROAD MAP")
-    print()
+    # print()
+    # print("ROAD MAP")
+    # print()
 
-    for road in main_nodes[0].road_map:
-        print(TerminalColor.green + f"Multiplicator [{road.multiplicator}]: ", end="")
-        road.process.display()
+    # for road in main_nodes[0].road_map:
+    #     print(TerminalColor.green + f"Multiplicator [{road.multiplicator}]: ", end="")
+    #     road.process.display()
 
     actual_time = 0
 
     best_route = main_nodes[0]
 
-    run_simplexe(content_file=content_file, route_requirements=best_route)
+    # run_simplexe(content_file=content_file, route_requirements=best_route)
 
 
     while True:
@@ -549,7 +547,7 @@ def main():
             break
 
     content_file.display_stock()
-    run_simplexe(content_file=content_file, route_requirements=best_route)
+    # run_simplexe(content_file=content_file, route_requirements=best_route)
     # print(main_nodes[0].children)
 
 

@@ -35,7 +35,7 @@ class ContentFile:
 
     def is_ressource_in_stock(self, process: Process):
         for need in process.needs:
-            if not self.is_item_in_stock(need):
+            if need.quantity != 0 and not self.is_item_in_stock(need):
                 return False
 
         return True
@@ -72,8 +72,9 @@ class ContentFile:
             raise Exception(f"Cannot run the process: {process.name} due to stock quantity.")
 
         for need in process.needs:
-            stock = next((stock for stock in self.stock_list if stock.name == need.name))
-            stock.remove(need.quantity)
+            if need.quantity != 0:
+                stock = next((stock for stock in self.stock_list if stock.name == need.name))
+                stock.remove(need.quantity)
             
         self.running_process_list.append(RunningProcess(process, process_from, time))
             
