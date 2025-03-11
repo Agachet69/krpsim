@@ -1,14 +1,12 @@
-Objecitf : Trouver la meilleure route
-                - Construire un graph des processus / Tree 
+- Parser les element ✅
+- Generer toutes les routes possibles
+- Generer une route aleatoire
+- Simuler le lancement de la route aleatoire
+- Calculer le fitness de la route en question
 
 
-Contraintes:
-    - Le stock evolue continuellement 
-        Dict : 'Process_name': {
-            'need': {'need_name': 5},
-            'time': 12,
-            'result': {'result_name': 15},
-        }
-
-Optimize:
-    - Si optimize = time -> minimiser, sinon maximiser
+Cas:
+- Lancer la suite de processus la plus optimiser
+- (Detecter un cas infinis ou non) Infinis
+- Si infinis mais contrainte temporel etre sur que le cas infinis est tout de meme le meilleur
+- Assez de stock pour lancer une route pour l;optimisation mais plus assez pour remplir le stock ensuite. 
