@@ -8,6 +8,7 @@ from Class.Stock import Stock
 from Class.ContentFile import ContentFile
 from Class.TerminalColor import TerminalColor
 from simplex import run_simplexe
+from utils import temporary_run, find_optmize_process, find_target_childs
 
 
 # LE FILE RECRE VA ETRE UN PEU RELOU A METRE EN PLACE JE EPNSE? MAIS PEU ETRE PAS NECESAIRE DE SE CASSER LA TETE DESSUS POUR LE MOMENT
@@ -75,9 +76,9 @@ def parse_file(path):
             if not line.startswith("#"):
                 if line == "\n":
                     continue
-                
-                if ':' in line: 
-                    name = line[:line.index(":")]
+
+                if ":" in line:
+                    name = line[: line.index(":")]
                     if name == "optimize":
                         content_file.add_optimize(parse_optimize_line(line))
                     else:
@@ -125,9 +126,15 @@ def find_route(node: Node, content_file: ContentFile):
                 processes = [
                     process
                     for process in content_file.process_list
-                    if (need.name in [result.name for result in process.results if result.quantity > 0])
+                    if (
+                        need.name
+                        in [
+                            result.name
+                            for result in process.results
+                            if result.quantity > 0
+                        ]
+                    )
                 ]
-
 
                 if buy_process := next(
                     (process for process in processes if process.type == "ressources"),
@@ -406,7 +413,6 @@ def calculate_stock_route(
         if result.name not in [need.name for need in node.process.needs]
     ]
 
-
     for result in results:
         route_stock_requirements.add_require_stock(
             Item(result.name, result.quantity * multiplicator),
@@ -420,14 +426,22 @@ def calculate_stock_route(
     needs = [
         need
         for need in node.process.needs
-        if need.name not in [result.name for result in node.process.results] and need.quantity > 0
+        if need.name not in [result.name for result in node.process.results]
+        and need.quantity > 0
     ]
 
     for need in needs:
         if child := next(
             (child for child in node.children if child.process.create_item(need)), None
         ):
-            result_child = next((result for result in child.process.results if result.name == need.name), None)
+            result_child = next(
+                (
+                    result
+                    for result in child.process.results
+                    if result.name == need.name
+                ),
+                None,
+            )
             # print(result_child.quantity)
             calculate_stock_route(
                 child,
@@ -442,13 +456,48 @@ def main():
 
     content_file = parse_file(args.path)
 
+    target_nodes = []
+    already_exist_node = {}
+
+    for optimize_value in content_file.optimize_list:
+        if optimize_value != "time":
+            find_optmize_process(
+                content_file.stock_list,
+                content_file.process_list,
+                optimize_value,
+                None,
+                already_exist_node,
+                target_nodes,
+            )
+
+        else:
+            print("optimize time")
+    # print(target_nodes[0])
+
+    print(already_exist_node.get(target_nodes[0].name_exist))
+
+    # for node in target_nodes:
+    #     find_target_childs(
+    #         content_file.stock_list,
+    #         content_file.process_list,
+
+    #     )
+
+    return
+
     main_nodes = []
 
     for optimize in content_file.optimize_list:
         if optimize != "time":
             for process in content_file.process_list:
                 if (
-                    len([True for result in process.results if result.name == optimize and result.quantity > 0])
+                    len(
+                        [
+                            True
+                            for result in process.results
+                            if result.name == optimize and result.quantity > 0
+                        ]
+                    )
                     > 0
                 ):
                     main_nodes.append(Node(process))
@@ -474,7 +523,6 @@ def main():
     #     print(TerminalColor.green + f"Route {i + 1} :", TerminalColor.white)
     #     node.route.display()
     #     print(TerminalColor.white)
-
 
     calculate_stock_route(main_nodes[0].route, main_nodes[0])
     # print()
@@ -508,7 +556,6 @@ def main():
 
     # run_simplexe(content_file=content_file, route_requirements=best_route)
 
-
     while True:
         print("Time:", actual_time)
 
@@ -533,7 +580,8 @@ def main():
         # best_route = find_best_route(main_nodes, content_file)
         # main_nodes[0].process.display()
 
-        new_run_route(best_route.route, None, content_file, best_route, 1, actual_time)
+        # new_run_route(best_route.route, None, content_file, best_route, 1, actual_time)
+        temporary_run(best_route.route, best_route, content_file.stock_list)
 
         # content_file.display_stock()
 
