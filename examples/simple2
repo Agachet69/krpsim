@@ -3,7 +3,7 @@ temps:1
 
 recuperer:(temps:1):(energie:1):1000
 perdre_mon_temps:(energie:1):(fatigue:1;plaisir:1):2000
-investir_gros:(fatigue:1;energie:1;euro:2):(euro:10000):3500
+investir_gros:(energie:1;euro:2):(euro:10000):3500
 rentabiliser:(euro:2):(euro:40):25
 divertissement:(temps:1):(fatigue:2;plaisir:5):2000
 

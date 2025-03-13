@@ -109,15 +109,15 @@ def parse_file(path):
 
 
 def find_route(node: Node, content_file: ContentFile):
-    # if all(
-    #     [
-    #         True
-    #         if need.name in [stock.name for stock in content_file.stock_list]
-    #         else False
-    #         for need in node.process.needs
-    #     ]
-    # ):
-    #     return
+    if all(
+        [
+            True
+            if need.name in [stock.name for stock in content_file.stock_list]
+            else False
+            for need in node.process.needs
+        ]
+    ):
+        return
     if node.process.type == "ressources":
         return
     else:
@@ -456,16 +456,14 @@ def main():
 
     content_file = parse_file(args.path)
 
-    target_nodes = []
+    target_nodes: List[Node] = []
     already_exist_node = {}
 
     for optimize_value in content_file.optimize_list:
         if optimize_value != "time":
             find_optmize_process(
-                content_file.stock_list,
                 content_file.process_list,
                 optimize_value,
-                None,
                 already_exist_node,
                 target_nodes,
             )
@@ -474,14 +472,21 @@ def main():
             print("optimize time")
     # print(target_nodes[0])
 
-    print(already_exist_node.get(target_nodes[0].name_exist))
+    # print(already_exist_node.get(target_nodes[0].name_exist))
 
-    # for node in target_nodes:
-    #     find_target_childs(
-    #         content_file.stock_list,
-    #         content_file.process_list,
-
-    #     )
+    for node in target_nodes:
+        find_target_childs(
+            content_file.stock_list,
+            content_file.process_list,
+            node,
+            already_exist_node,
+            target_nodes,
+        )
+    for node in target_nodes:
+        while node.parent:
+            node = node.parent
+        print()
+        print(node.display())
 
     return
 
@@ -502,13 +507,16 @@ def main():
                 ):
                     main_nodes.append(Node(process))
 
+    for node in main_nodes:
+        node.display()
+
     # content_file.display_stock()
     # print()
-    print(
-        TerminalColor.blue
-        + "Optimize: "
-        + ", ".join([optimize for optimize in content_file.optimize_list])
-    )
+    # print(
+    #     TerminalColor.blue
+    #     + "Optimize: "
+    #     + ", ".join([optimize for optimize in content_file.optimize_list])
+    # )
 
     for i, _ in enumerate(main_nodes):
         find_route(main_nodes[i], content_file)
@@ -517,14 +525,15 @@ def main():
 
     # for process in content_file.process_list:
     #     process.display()
-    print(TerminalColor.green)
+    # print(TerminalColor.white)
 
     # for i, node in enumerate(main_nodes):
     #     print(TerminalColor.green + f"Route {i + 1} :", TerminalColor.white)
     #     node.route.display()
     #     print(TerminalColor.white)
 
-    calculate_stock_route(main_nodes[0].route, main_nodes[0])
+    for main_node in main_nodes:
+        calculate_stock_route(main_node.route, main_node)
     # print()
 
     # for requirement in main_nodes[0].requirements:
@@ -580,8 +589,8 @@ def main():
         # best_route = find_best_route(main_nodes, content_file)
         # main_nodes[0].process.display()
 
-        # new_run_route(best_route.route, None, content_file, best_route, 1, actual_time)
-        temporary_run(best_route.route, best_route, content_file.stock_list)
+        new_run_route(best_route.route, None, content_file, best_route, 1, actual_time)
+        # temporary_run(best_route.route, best_route, content_file.stock_list)
 
         # content_file.display_stock()
 

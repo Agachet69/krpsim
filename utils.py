@@ -10,17 +10,15 @@ import random
 import copy
 
 def find_optmize_process(
-    stock_list: List[Stock],
     processes: List[Process],
     optimize_target: str,
-    parent: Node,
     already_exist_node: dict,
-    target_nodes,
+    target_nodes: List[Node],
 ):
     for process in processes:
         for result in process.results:
             if result.name == optimize_target:
-                new_main = Node(process, process.name)
+                new_main = Node(process, process.name, None)
                 target_nodes.append(new_main)
                 already_exist_node[new_main.name_exist] = True
 
@@ -28,65 +26,57 @@ def find_optmize_process(
 def find_target_childs(
     stock_list: List[Stock],
     processes: List[Process],
-    target: str,
     parent: Node,
     already_exist_node: dict,
+    target_nodes: List[Node],
 ):
+    
+    stock = {}
+    for stock_item in stock_list:
+        stock[stock_item.name] = stock_item.quantity
+    
     process_child: Process = []
-    for process in processes:
-        for result in process.results:
-            if result.name == target:
-                parent_copy = copy.deepcopy(parent)
-                name_exist = f'{parent_copy.name_exist} - {process.name}'
-                if (already_exist_node.get(name_exist)):
-                    new_child = Node(process, name_exist)
+    same_target_process = 0
+    for target in parent.process.needs:
 
-                    parent_copy.children.append(process)
+        if stock.get(target.name) and target.quantity <= stock.get(target.name):
+            continue
+
+        same_target_process = 0
+        for process in processes:
+            for result in process.results:
+
+                if result.name == target.name:
+
+                    if parent.process.name == process.name:
+                        continue
+
+                    name_exist = f"{parent.name_exist} - {process.name}"
+                    if (already_exist_node.get(name_exist) is True):
+                        continue
+                    already_exist_node[name_exist] = True
+                    # print(name_exist)
+
+                    new_child = Node(process, name_exist, parent)
+
+                    # print(parent.name_exist)
+                    if same_target_process > 0:
+                        parent_copy = copy.deepcopy(parent)
+                        parent_copy.children.pop()
+                        parent_copy.children.append(new_child)
+                        target_nodes.append(parent_copy)
+
+                    else:
+                        parent.children.append(new_child)
+                    same_target_process += 1
                     for need in process.needs:
-                        find_target_childs(stock_list, processes, need, process)
-                
-    # if all(
-    #     [
-    #         True
-    #         if need.name in [stock.name for stock in content_file.stock_list]
-    #         else False
-    #         for need in node.process.needs
-    #     ]
-    # ):
-    #     return
-    # if node.process.type == "ressources":
-    #     return
-    # else:
-    #     for need in node.process.needs:
-    #         if need.name not in [stock.name for stock in content_file.stock_list]:
-    #             processes = [
-    #                 process
-    #                 for process in content_file.process_list
-    #                 if (
-    #                     need.name
-    #                     in [
-    #                         result.name
-    #                         for result in process.results
-    #                         if result.quantity > 0
-    #                     ]
-    #                 )
-    #             ]
-
-    #             if buy_process := next(
-    #                 (process for process in processes if process.type == "ressources"),
-    #                 None,
-    #             ):
-    #                 new_node = Node(buy_process)
-    #                 node.add_child(new_node)
-    #                 return
-    #                 # find_route(new_node, content_file)
-
-    #             else:
-    #                 for process in processes:
-    #                     new_node = Node(process)
-    #                     node.add_child(new_node)
-
-    #                     find_route(new_node, content_file)
+                        find_target_childs(
+                            stock_list,
+                            processes,
+                            new_child,
+                            already_exist_node,
+                            target_nodes,
+                        )
 
 
 def temporary_run(

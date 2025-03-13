@@ -4,9 +4,10 @@ from Class.TerminalColor import TerminalColor
 
 
 class Node:
-    def __init__(self, process: Process, name_exist: str):
+    def __init__(self, process: Process, name_exist: str, parent):
         self.process: Process = process
         self.children: List[Node] = []
+        self.parent = parent
         self.name_exist: str = name_exist
 
     def add_child(self, child):
