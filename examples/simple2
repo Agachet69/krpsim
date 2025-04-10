@@ -1,10 +1,23 @@
-euro:4
-temps:1
+# euro:4
+# temps:1
 
-recuperer:(temps:1):(energie:1):1000
-perdre_mon_temps:(energie:1):(fatigue:1;plaisir:1):2000
-investir_gros:(energie:1;euro:2):(euro:10000):3500
-rentabiliser:(euro:2):(euro:40):25
-divertissement:(temps:1):(fatigue:2;plaisir:5):2000
+# recuperer:(temps:1):(energie:1):1000
+# perdre_mon_temps:(energie:1):(fatigue:1;plaisir:1):2000
+# investir_gros:(energie:1;euro:2):(euro:10000):3500
+# rentabiliser:(euro:2):(euro:40):25
+# divertissement:(temps:1):(fatigue:2;plaisir:5):2000
 
-optimize:(euro;plaisir)
+# optimize:(euro;plaisir)
+
+euro:0
+clavier:12
+souris:15
+ecran:20
+
+
+vendre_clavier:(clavier:1):(euro:40):20
+vendre_souris:(souris:1):(euro:25):20
+vendre_pack:(clavier:1;souris:1):(euro:70):20
+vendre_ultime_pack:(clavier:1;souris:1;ecran:1):(euro:170):20
+
+optimize:(euro)

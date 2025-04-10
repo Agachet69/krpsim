@@ -6,10 +6,19 @@ from Class.Item import Item
 from Class.RouteStockRequirements import RouteStockRequirements
 from Class.Stock import Stock
 from Class.ContentFile import ContentFile
+from Class.Process import Process
 from Class.TerminalColor import TerminalColor
-from simplex import run_simplexe
-from utils import temporary_run, find_optmize_process, find_target_childs
-
+from program.simplex import run_simplexe
+from program.utils import (
+    temporary_run,
+    find_optmize_process,
+    find_target_childs,
+    having_in_stock_and_update_it,
+    have_it_in_stock,
+    can_lanch_process,
+    is_optimized_process,
+)
+from program.get_process import get_process_by_need, get_optimize_process_by_need
 
 # LE FILE RECRE VA ETRE UN PEU RELOU A METRE EN PLACE JE EPNSE? MAIS PEU ETRE PAS NECESAIRE DE SE CASSER LA TETE DESSUS POUR LE MOMENT
 
@@ -473,20 +482,61 @@ def main():
     # print(target_nodes[0])
 
     # print(already_exist_node.get(target_nodes[0].name_exist))
+    # to_maximise_values = []
+    # contraintes_by_process = {}
+    
+    # for node in target_nodes:
+    #     find_target_childs(
+    #         content_file.stock_list,
+    #         content_file.process_list,
+    #         node,
+    #         already_exist_node,
+    #         target_nodes,
+    #     )
+    # for node in target_nodes:
+    #     while node.parent:
+    #         node = node.parent
+    #     print()
+    #     print(node.display())
+    #     print(node.process.results[0].quantity)
 
-    for node in target_nodes:
-        find_target_childs(
-            content_file.stock_list,
-            content_file.process_list,
-            node,
-            already_exist_node,
-            target_nodes,
-        )
-    for node in target_nodes:
-        while node.parent:
-            node = node.parent
-        print()
-        print(node.display())
+    startings_process: List[Process] = []
+    bests_processes: List[Process] = []
+
+
+    for process in content_file.process_list:
+        if can_lanch_process(content_file.stock_list, process.needs):
+            startings_process.append(process)
+            if is_optimized_process(process, content_file.optimize_list):
+                bests_processes.append(process)
+        if process_auto_generate_stock(process)
+    for process in startings_process:
+        print(process.name)
+
+    # for optimize in content_file.optimize_list:
+    #     all_main_process = get_optimize_process_by_need(optimize, content_file.process_list)
+    
+    # print(all_main_process)
+    # for process in all_main_process:
+    #     if have_it_in_stock(content_file.stock_list, process.needs[0]):
+    #         print('have it')
+    #     for need in process.needs:
+    #         process_neeeds = get_process_by_need(need, content_file.process_list)
+    #         for process in process_neeeds:
+    #             have_it_in_stock(content_file.stock_list, process.needs[0])
+
+        
+        # to_maximise_values.append(node.process.results[0].quantity)
+        # contraintes_by_process[node.process.name] = []
+        # contraintes_by_process[node.process.name].append(
+        #     node.process.needs[0].quantity
+        # )
+
+        # print(contraintes_by_process)
+
+    # simplexe
+
+    
 
     return
 

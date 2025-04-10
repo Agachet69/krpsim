@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Literal, Union
 from Class.Item import Item
 from Class.Node import Node
 from Class.RouteStockRequirements import RouteStockRequirements
@@ -8,6 +8,7 @@ from Class.ContentFile import ContentFile
 from Class.Process import Process
 import random
 import copy
+
 
 def find_optmize_process(
     processes: List[Process],
@@ -30,29 +31,25 @@ def find_target_childs(
     already_exist_node: dict,
     target_nodes: List[Node],
 ):
-    
     stock = {}
     for stock_item in stock_list:
         stock[stock_item.name] = stock_item.quantity
-    
+
     process_child: Process = []
     same_target_process = 0
     for target in parent.process.needs:
-
         if stock.get(target.name) and target.quantity <= stock.get(target.name):
             continue
 
         same_target_process = 0
         for process in processes:
             for result in process.results:
-
                 if result.name == target.name:
-
                     if parent.process.name == process.name:
                         continue
 
                     name_exist = f"{parent.name_exist} - {process.name}"
-                    if (already_exist_node.get(name_exist) is True):
+                    if already_exist_node.get(name_exist) is True:
                         continue
                     already_exist_node[name_exist] = True
                     # print(name_exist)
@@ -121,6 +118,45 @@ def genetic_algorithm(
         print(individual)
     print()
 
+
+def have_it_in_stock(stock_list: List[Stock], item: Item):
+    for item_in in stock_list:
+        if item.quantity == 0:
+            return True
+        if item_in.name == item.name and item_in.quantity >= item.quantity:
+            print(f"{item.quantity} {item.name}: True")
+            return True
+    print(f"{item.quantity} {item.name}: False")
+    return False
+
+
+def having_in_stock_and_update_it(stock_list: List[Stock], item: Item):
+    for item_in in stock_list:
+        if item_in.name == item.name and item_in.quantity >= item.quantity:
+            item_in.quantity -= item.quantity
+            print("True")
+            return True
+    print("False")
+    return False
+
+
+def can_lanch_process(stock_list: List[Stock], needs: List[Item]):
+    for need in needs:
+        if not have_it_in_stock(stock_list, need):
+            return False
+    return True
+
+def is_optimized_result_item(result_item: Item, optimized_list: List[Union[Literal["time"], str]]):
+    for optimized_value in optimized_list:
+        if result_item.name == optimized_value and result_item.quantity > 0:
+            return True
+    return False
+
+def is_optimized_process(process: Process, optimized_list: List[Union[Literal["time"], str]]):
+    for result_item in process.results:
+        if is_optimized_result_item(result_item, optimized_list):
+            return True
+    return False
 
 processes = [
     {"name": "my process1"},
