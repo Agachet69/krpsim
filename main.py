@@ -18,7 +18,7 @@ from program.utils import (
     can_lanch_process,
     is_optimized_process,
 )
-from program.get_process import get_process_by_need, get_optimize_process_by_need
+from program.get_process import get_process_by_need, get_optimize_process_by_need ,get_process_auto_generate_stock
 
 # LE FILE RECRE VA ETRE UN PEU RELOU A METRE EN PLACE JE EPNSE? MAIS PEU ETRE PAS NECESAIRE DE SE CASSER LA TETE DESSUS POUR LE MOMENT
 
@@ -509,7 +509,9 @@ def main():
             startings_process.append(process)
             if is_optimized_process(process, content_file.optimize_list):
                 bests_processes.append(process)
-        if process_auto_generate_stock(process)
+        if get_process_auto_generate_stock(process):
+            print(f"{process.name} autogenerate")
+
     for process in startings_process:
         print(process.name)
 

@@ -9,6 +9,7 @@ recuperer_sable:(temps:1):(sable:10):50
 mal_recuperer_sable:(temps:1):(sable:6):50
 #mabaltostess:(goodeeeeevning:0):(sable:6):50
 plus_mal_recuperer_sable:(temps:1):(sable:2):50
+jeter_du_sable:(sable:1):(sable:2):50
 
 construire_chateau:(sable:3):(chateau:1):20
 ne_rien_faire:(sable:0):(chateau:0):20

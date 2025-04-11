@@ -7,8 +7,6 @@ from typing import List, Literal, Union
 #     for need in process.needs:
 
 
-
-
 def get_process_by_need(need: Item, process_list: List[Process]):
     process_interests: List[Process] = []
 
@@ -33,7 +31,13 @@ def get_optimize_process_by_need(optimize: str, process_list: List[Process]):
     return process_interests
 
 
-
+def get_process_auto_generate_stock(process: Process):
+    # for need in process.needs:
+        # if need in process.results:
+        #     print(f"{process.name} auto ")
+        #     return True
+    noms_resultats = {res.name for res in process.results}
+    return all(need.name in noms_resultats for need in process.needs)
 
 # liste de processus qui optimisent
 # P1 -> P2 -> P3
